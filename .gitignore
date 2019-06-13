@@ -332,3 +332,4 @@ ASALocalRun/
 *.vcxproj
 *.filters
 *.sln
+/标识线程/pch.cpp
