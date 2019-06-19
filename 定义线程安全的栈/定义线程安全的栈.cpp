@@ -7,7 +7,7 @@
 #include <vector>
 #include <stdio.h>
 #include <exception>
-
+#include <set>
 using namespace std;
 
 struct stack_empty:exception
@@ -67,7 +67,7 @@ public:
 		return false;
 	}
 };
-vector<int> safev, unsafev;
+set<int> safev, unsafev;
 mutex gm;
 template<typename T>
 void safework(threadsafe_stack<T>& safe)
@@ -76,37 +76,49 @@ void safework(threadsafe_stack<T>& safe)
 	{
 		shared_ptr<T> sp = safe.pop();
 		lock_guard<mutex> l(gm);
-		safev.push_back(*sp); //不上锁push_back()不是线程安全的，但上锁了会导致数据顺序偶尔错乱。如果把锁移到循环开头则与单线程无异。总之就是不该用push_back(),threadsafe_stack没问题。
+		safev.insert(*sp); //不上锁insert不是线程安全的，但上锁了push_back会导致数据顺序偶尔错乱。如果把锁移到循环开头则与单线程无异。总之就是不该用stl容器,threadsafe_stack没问题,换成set自动排序了也没问题。
 	}
 }
 mutex gu;
 template<typename T>
 void unsafework(stack<T>& unsafe)
 {
-	for (int i = 0; i < 500; i++)
+	for (int i = 0; i < 5000; i++)
 	{
 		T n = unsafe.top(); //异常走起
 		unsafe.pop();
 		lock_guard<mutex> l(gu);
-		unsafev.push_back(n);
+		unsafev.insert(n);
 	//	printf("%d ", n);
 	}
 }
-void verify(vector<int>& v)
+void verify(set<int>& v)
 {
 	printf("V.size()=%d\n",v.size());
 	vector<int> pos ;
 	bool flag = 0;
-	for (int i = v.size() - 1; i > 0; i--)
+	//for (auto it = v.begin(); it!=v.end(); it++)
+	//{
+	//	//printf("%d ", v[i]);
+	//	if (v[i]+1 != v[i - 1])
+	//	{
+	//		flag = 1;
+	//		pos.push_back(v[i]);
+	//		pos.push_back(v[i - 1]);
+	//		i--;
+	//	}
+	//}
+	int val = -1;
+	for (auto it = v.begin(); it != v.end(); it++)
 	{
-		//printf("%d ", v[i]);
-		if (v[i]+1 != v[i - 1])
+		if (*it != val + 1)
 		{
 			flag = 1;
-			pos.push_back(v[i]);
-			pos.push_back(v[i - 1]);
-			i--;
+			pos.push_back(val);
+			pos.push_back(*it);
+			it++;
 		}
+		val = *it;
 	}
 	if (flag)
 	{
@@ -139,16 +151,16 @@ int main()
 		threads[i].detach();
 	}
 **/
-	thread t(unsafework<int>, ref(unsafe));
-//	thread t1(unsafework<int>, ref(unsafe));    
+	//thread t(unsafework<int>, ref(unsafe));
+	//thread t1(unsafework<int>, ref(unsafe));    
 	thread ts(safework<int>, ref(safe)); 
 	thread ts1(safework<int>, ref(safe));
 
-//	t1.join();
-	t.join();
+	//t1.join();
+	//t.join();
 	ts.join();
 	ts1.join();
-	verify(unsafev);
+	//verify(unsafev);
 	verify(safev);
 }
 
