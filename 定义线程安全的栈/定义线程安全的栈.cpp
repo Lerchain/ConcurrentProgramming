@@ -138,11 +138,11 @@ int main()
 	}
 	threadsafe_stack<int> safe(unsafe);
 //	vector<thread> threads;
-/**
+/**								//错误测试方法
 	for (int i = 0; i < 500; i++)
 	{
-	//	threads.push_back(thread([&safe, &unsafe, i] { unsafe.pop(); unsafe.pop();  }));//不能定位异常产生位置
-	//	threads.push_back(thread([&safe, &unsafe, i] { safe.pop(); safe.pop();}));//能够定位异常产生位置
+	//	threads.push_back(thread([&safe, &unsafe, i] { unsafe.pop(); unsafe.pop();  }));
+	//	threads.push_back(thread([&safe, &unsafe, i] { safe.pop(); safe.pop();}));
 		threads.push_back(thread([&safe, &unsafe, i] { unsafework(unsafe); unsafework(unsafe); }));
 	}
 

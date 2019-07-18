@@ -333,3 +333,4 @@ ASALocalRun/
 *.filters
 *.sln
 /标识线程/pch.cpp
+/不同域中互斥量所有权的传递/pch.cpp
