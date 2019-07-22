@@ -337,3 +337,4 @@ ASALocalRun/
 /保护共享数据的初始化过程/pch.cpp
 /保护很少更新的数据结构/pch.cpp
 /等待一个事件或其他条件/pch.cpp
+/构建线程安全队列/pch.cpp
