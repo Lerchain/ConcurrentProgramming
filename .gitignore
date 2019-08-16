@@ -341,3 +341,4 @@ ASALocalRun/
 /带有返回值的后台任务/pch.cpp
 /快速排序FP线程强化版/pch.cpp
 /最简单的原子类型/pch.cpp
+/原子操作实现顺序执行/pch.cpp
