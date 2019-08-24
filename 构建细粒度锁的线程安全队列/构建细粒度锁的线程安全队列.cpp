@@ -61,7 +61,43 @@ public:
 	}
 };
 
+template<class T>
+class QueueWithVirtualNode
+{
+private:
+	struct node	
+	{
+		shared_ptr<T> data;
+		unique_ptr<node> next;
+	};
+	unique_ptr<node> head;
+	node* tail;
+public:
+	QueueWithVirtualNode():head(new node),tail(head.get()){}	//先创建个空节点
+	QueueWithVirtualNode(const QueueWithVirtualNode& other) = delete;
+	QueueWithVirtualNode& operator=(const QueueWithVirtualNode& other) = delete;
 
+	shared_ptr<T> tryPop()
+	{
+		if (head.get() == tail)	//因为有空节点，所以这是队列为空的标志。
+		{
+			return shared_ptr<T>();
+		}
+		shared_ptr<T> const res(head->data);
+		unique_ptr<node> oldHead = move(head);
+		head = move(oldHead->next);
+		return res;
+	}
+	void push(T newValue)
+	{
+		shared_ptr<T> newData(make_shared<T>(move(newValue)));	
+		unique_ptr<node> p(new node);
+		tail->data = newData;		//这么做都是为了在push中不引入对head的写操作。
+		node* const newTail = p.get();
+		tail->next = move(p);
+		tail = newTail;
+	}
+};
 int main()
 {
 	SingleThreadQueue<int> s;
@@ -74,5 +110,16 @@ int main()
 		shared_ptr<int> p = s.try_pop();
 		if(p)
 		cout << *p << endl;
+	}
+	QueueWithVirtualNode<int> vnq;
+	for (int i = 0; i < 10; i++)
+	{
+		vnq.push(i);
+	}
+	for (int i = 0; i < 11; i++)
+	{
+		shared_ptr<int> p = vnq.tryPop();
+		if (p)
+			cout << *p << endl;
 	}
 }
