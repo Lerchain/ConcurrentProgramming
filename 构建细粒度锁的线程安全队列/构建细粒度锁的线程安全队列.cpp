@@ -3,7 +3,8 @@
 #include <thread>
 #include <condition_variable>
 #include <mutex>
-
+#include "threadSafeQueue.h"
+#include "threadSafeQueue.cpp"
 using namespace std;
 
 template<typename T>
@@ -98,6 +99,22 @@ public:
 		tail = newTail;
 	}
 };
+void pushData(threadSafeQueue<int>& q)
+{
+	for (int i = 0; i < 100; i++)
+	{
+		q.push(i);
+	}
+}
+void readData(threadSafeQueue<int>& q)
+{
+	for (int i = 0; i < 200; i++)
+	{
+		int val;
+		q.waitAndPop(val);
+		printf("%d ", val);
+	}
+}
 int main()
 {
 	SingleThreadQueue<int> s;
@@ -121,5 +138,26 @@ int main()
 		shared_ptr<int> p = vnq.tryPop();
 		if (p)
 			cout << *p << endl;
+	}
+
+	threadSafeQueue<int> q;/*
+	thread t(pushData,ref(q));
+	thread t2(pushData,ref(q));
+	thread t3(readData,ref(q));*/
+	//thread t([&](threadSafeQueue<int> q) {for (int i = 0; i < 100; i++) q.push(i); });
+	//thread t2([&](threadSafeQueue<int> q) {for (int i = 0; i < 100; i++) q.push(i+100); });
+	//thread t3([&](threadSafeQueue<int> q) {for (int i = 0; i < 200; i++) { int t; q.waitAndPop(t); printf("%d ", t); } });
+	/*t.join();
+	t2.join();
+	t3.join();*/
+	for (int i = 0; i < 100; i++)
+	{
+		q.push(i);
+	}
+	for (int i = 0; i < 100; i++)
+	{
+		shared_ptr<int> p = q.tryPop();
+		if (p)
+			cout << *p;
 	}
 }
