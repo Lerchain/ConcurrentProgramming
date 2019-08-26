@@ -14,13 +14,15 @@ template<typename T>
 void threadSafeQueue<T>::push(T val)
 {
 	//tail->val = make_shared<T>(move(val);//为了尽可能的锁住少的区域扩展此代码。更重要的原因是为了保护程序特殊情况下不会崩溃。
-	shared_ptr<T> newVal(make_shared<T>(move(val)));
+	shared_ptr<T> newVal(make_shared<T>(val));
 	unique_ptr<node> nxt(new node());
 	{
 		lock_guard<mutex> lk(tailMutex);
-		tail->val = newVal;			//奇了怪了这里为什么会出异常。
-		tail->next = move(nxt);
-		tail = nxt.get();
+		tail->val = newVal;			//奇了怪了这里为什么会出异常。成员初始化顺序啊啊啊啊
+	//	tail->val = make_shared<T>(val);
+		node* newTail = nxt.get();
+		tail->next = move(nxt);		//这里要注意nxt已经move了
+		tail = newTail;
 	}
 	cv.notify_one();
 }
@@ -38,8 +40,9 @@ shared_ptr<T> threadSafeQueue<T>::tryPop()
 	lock_guard<mutex> lk(headMutex);
 	if (head.get() == getTail())
 		return shared_ptr<T>();
-	shared_ptr<T> res = move(head->val);
+	shared_ptr<T> res = head->val;
 	head = move(head->next);
+	return res;
 }
 
 template<typename T>
@@ -50,6 +53,7 @@ bool threadSafeQueue<T>::tryPop(T& val)
 		return false;
 	val = head->val;
 	head = move(head->next);
+	return true;
 }
 
 template<typename T>
@@ -58,6 +62,7 @@ shared_ptr<T> threadSafeQueue<T>::waitAndPop()
 	cv.wait(headMutex, [&] {return head.get() != getTail(); });
 	shared_ptr<T> res = make_shared<T>(head->val);
 	head = move(head->next);
+	return res;
 }
 
 template<typename T>

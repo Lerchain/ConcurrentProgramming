@@ -3,6 +3,7 @@
 #include <thread>
 #include <condition_variable>
 #include <mutex>
+#include <atomic>
 #include "threadSafeQueue.h"
 #include "threadSafeQueue.cpp"
 using namespace std;
@@ -101,7 +102,7 @@ public:
 };
 void pushData(threadSafeQueue<int>& q)
 {
-	for (int i = 0; i < 100; i++)
+	for (int i = 1; i < 100; i++)
 	{
 		q.push(i);
 	}
@@ -140,24 +141,45 @@ int main()
 			cout << *p << endl;
 	}
 
-	threadSafeQueue<int> q;/*
-	thread t(pushData,ref(q));
+	threadSafeQueue<int> q;
+	/*thread t(pushData,ref(q));
 	thread t2(pushData,ref(q));
 	thread t3(readData,ref(q));*/
-	//thread t([&](threadSafeQueue<int> q) {for (int i = 0; i < 100; i++) q.push(i); });
-	//thread t2([&](threadSafeQueue<int> q) {for (int i = 0; i < 100; i++) q.push(i+100); });
-	//thread t3([&](threadSafeQueue<int> q) {for (int i = 0; i < 200; i++) { int t; q.waitAndPop(t); printf("%d ", t); } });
-	/*t.join();
+	atomic<bool> start = false;
+	thread t([&] {while (!start.load()); for (int i = 0; i < 100; i++) q.push(i); });
+	thread t2([&] {while (!start.load()); for (int i = 0; i < 100; i++) q.push(i + 100); });
+	//thread t3([&]{for (int i = 0; i < 200; i++) { int t; q.waitAndPop(t); printf("%d ", t); } });
+	int cnt = 0;
+	thread t3([&]{
+		while (!start.load());
+		for (int i = 0; i < 200; i++)
+		{
+			shared_ptr<int> p;
+			p = move(q.tryPop());
+			if (p)
+			{
+				printf("%d ", *p);
+				cnt++;
+			}
+		}
+			if (cnt == 200)
+				printf("True");
+			else
+				printf("False");
+	});
+	start = true;
+	t.join();
 	t2.join();
-	t3.join();*/
-	for (int i = 0; i < 100; i++)
-	{
-		q.push(i);
-	}
-	for (int i = 0; i < 100; i++)
-	{
-		shared_ptr<int> p = q.tryPop();
-		if (p)
-			cout << *p;
-	}
+	t3.join();
+	//for (int i = 1; i < 100; i++)
+	//{
+	//	q.push(i);
+	//}
+	//for (int i = 0; i < 100; i++)
+	//{
+	//	shared_ptr<int> p(move(q.tryPop()));
+	//	if (p)
+	//		cout << *p;
+	//}
+	
 }
