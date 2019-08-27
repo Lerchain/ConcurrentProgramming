@@ -345,3 +345,4 @@ ASALocalRun/
 /非限制原子操作/pch.cpp
 /获取-释放顺序进行同步/pch.cpp
 /构建细粒度锁的线程安全队列/pch.cpp
+/线程安全链表/pch.cpp
